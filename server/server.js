@@ -1,19 +1,19 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-require('dotenv').config();  // To load environment variables
 
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" })); // In production, restrict this to allowed domains
 
-// Retrieve OpenAI API key from environment variable
-const OPENAI_API_KEY = "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";  // Ensure you have set this in your .env file
+// Directly set your OpenAI API key here
+const OPENAI_API_KEY = "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";  // Your API Key
 
 // Define the translation endpoint
 app.post("/translate", async (req, res) => {
     const { inputCode, fromLang, toLang } = req.body;
 
+    // Validate the incoming request
     if (!inputCode || !fromLang || !toLang) {
         return res.status(400).json({ translatedCode: "Missing input data!" });
     }
