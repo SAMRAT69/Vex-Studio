@@ -1,13 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
-require("dotenv").config();
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "*" })); // Enable CORS for all origins. Change it to a more restricted list for production.
+app.use(cors({ origin: "*" })); // Allow all origins. Change to more restrictive in production
 
-const OPENAI_API_KEY = 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;  // Load the API key from the .env file
+// Directly expose the API key (not recommended in production)
+const OPENAI_API_KEY = "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"; 
 
 app.post("/translate", async (req, res) => {
     const { inputCode, fromLang, toLang } = req.body;
@@ -15,13 +15,21 @@ app.post("/translate", async (req, res) => {
     const prompt = `Translate the following ${fromLang} code to ${toLang}:\n\n${inputCode}`;
 
     try {
+        // Make request to OpenAI API to translate code
         const response = await axios.post("https://api.openai.com/v1/chat/completions", {
             model: "gpt-4-turbo",
-            messages: [{ role: "system", content: "You are a helpful AI that translates code." }, { role: "user", content: prompt }],
+            messages: [
+                { role: "system", content: "You are a helpful AI that translates code." },
+                { role: "user", content: prompt }
+            ]
         }, {
-            headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" }
+            headers: {
+                "Authorization": `Bearer ${OPENAI_API_KEY}`,
+                "Content-Type": "application/json"
+            }
         });
 
+        // Send translated code as response
         res.json({ translatedCode: response.data.choices[0].message.content.trim() });
     } catch (error) {
         console.error(error);
