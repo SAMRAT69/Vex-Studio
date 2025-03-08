@@ -12,7 +12,7 @@ function translateCode() {
     outputBox.value = "Translating... ⏳";
 
     // Make a request to your own server to handle the translation request
-    fetch('http://localhost:3000/translate', {  // Make sure to update to your server URL
+    fetch('https://vex-studio.vercel.app/translate', {  // Make sure to update to your server URL
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
