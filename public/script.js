@@ -12,7 +12,7 @@ async function translateCode() {
     outputBox.value = "Translating... ⏳";
 
     try {
-        const response = await fetch("http://localhost:3000/translate", {
+        const response = await fetch("http://localhost:3000/translate", { // Change to your production URL
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -28,6 +28,6 @@ async function translateCode() {
         outputBox.value = data.translatedCode || "Translation failed!";
     } catch (error) {
         console.error("Error:", error);
-        outputBox.value = "❌ Error translating. Check console for details!";
+        outputBox.value = `❌ Error: ${error.message}. Check the console for details!`;
     }
 }
