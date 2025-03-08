@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vex Studio - Code Translator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Vex Studio</h1>
+        <textarea id="inputCode" placeholder="Enter your code here..."></textarea>
+        <select id="fromLang">
+            <option value="lua">Lua</option>
+            <option value="javascript">JavaScript</option>
+            <option value="python">Python</option>
+        </select>
+        <span>to</span>
+        <select id="toLang">
+            <option value="javascript">JavaScript</option>
+            <option value="lua">Lua</option>
+            <option value="python">Python</option>
+        </select>
+        <button onclick="translateCode()">Translate</button>
+        <textarea id="outputCode" placeholder="Translated code will appear here..." readonly></textarea>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
