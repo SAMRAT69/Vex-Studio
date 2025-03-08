@@ -11,8 +11,8 @@ function translateCode() {
 
     outputBox.value = "Translating... ⏳";
 
-    // Make a request to your own server to handle the translation request
-    fetch('https://vex-studio.vercel.app/translate', {  // Make sure to update to your server URL
+    // Make a request to your server to handle the translation request
+    fetch('https://vex-studio.vercel.app/translate', {  // Ensure this URL is correct for production
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -23,12 +23,22 @@ function translateCode() {
             toLang
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
-        outputBox.value = data.translatedCode || "Translation failed!";
+        // Ensure response contains translated code
+        if (data && data.translatedCode) {
+            outputBox.value = data.translatedCode.trim() || "Translation failed!";
+        } else {
+            outputBox.value = "❌ No translation available.";
+        }
     })
     .catch(error => {
         console.error("Error:", error);
-        outputBox.value = "❌ Error: Failed to translate code.";
+        outputBox.value = `❌ Error: ${error.message}`;
     });
 }
