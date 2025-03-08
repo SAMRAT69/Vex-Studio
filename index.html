@@ -6,15 +6,287 @@
     <title>Vex IDE</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.1.0/skulpt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.1.0/skulpt-stdlib.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
     <style>
-        /* Add your CSS styles here */
+        @import url('https://fonts.cdnfonts.com/css/cascadia-code');
+        @import url('https://fonts.cdnfonts.com/css/proggy-clean');
+
+        :root {
+            --bg: #1E1E1E;
+            --panel: #252526;
+            --border: #3C3C3C;
+            --text: #D4D4D4;
+            --accent: #569CD6;
+            --hover: #2D2D30;
+            --active: #094771;
+            --gutter: #858585;
+            --error: #F44747;
+            --keyword: #C586C0;
+            --string: #CE9178;
+            --number: #B5CEA8;
+            --function: #DCDCAA;
+            --comment: #6A9955;
+            --editor-font: 'Cascadia Code', 'Proggy Clean', monospace;
+            --easing: cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--editor-font);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .title-bar {
+            padding: 6px 12px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            height: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .imgui-button {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s var(--easing);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .imgui-button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity 0.2s var(--easing);
+        }
+
+        .imgui-button:hover {
+            background: var(--hover);
+            border-color: var(--accent);
+        }
+
+        .imgui-button:hover::after {
+            opacity: 0.1;
+        }
+
+        .imgui-button:active {
+            background: var(--active);
+            transform: translateY(1px);
+        }
+
+        .tab-bar {
+            display: flex;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            padding: 8px 8px 0;
+            gap: 4px;
+            height: 36px;
+        }
+
+        .tab {
+            padding: 8px 32px 8px 16px;
+            background: var(--panel);
+            border: 1px solid transparent;
+            position: relative;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s var(--easing);
+            border-radius: 4px 4px 0 0;
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+        }
+
+        .tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -8px;
+            width: 8px;
+            height: 100%;
+            background: inherit;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 calc(100% - 8px));
+        }
+
+        .tab.active {
+            background: var(--bg);
+            border-color: var(--accent);
+            color: var(--accent);
+            z-index: 1;
+        }
+
+        .tab-close {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s var(--easing);
+        }
+
+        .tab-close:hover {
+            opacity: 1;
+            color: var(--accent);
+        }
+
+        .editor-wrapper {
+            flex: 1;
+            display: flex;
+            background: var(--bg);
+            position: relative;
+        }
+
+        .gutter {
+            width: 40px;
+            padding: 8px 4px;
+            background: var(--panel);
+            color: var(--gutter);
+            text-align: right;
+            user-select: none;
+            font-size: 13px;
+            transition: all 0.2s var(--easing);
+        }
+
+        .editor-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #editor {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            padding: 8px;
+            font-family: var(--editor-font);
+            font-size: 14px;
+            line-height: 1.5;
+            tab-size: 4;
+            caret-color: var(--text);
+            white-space: pre;
+            overflow: auto;
+            outline: none;
+            border: none;
+            background: transparent;
+            transition: all 0.2s var(--easing);
+        }
+
+        .console {
+            height: 200px;
+            background: var(--panel);
+            border-top: 1px solid var(--border);
+            padding: 8px;
+            overflow: auto;
+            font-family: var(--editor-font);
+            font-size: 13px;
+            transform: translateY(100%);
+            transition: transform 0.3s var(--easing);
+        }
+
+        .console.visible {
+            transform: translateY(0);
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 48px;
+            right: -300px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 16px;
+            width: 280px;
+            gap: 12px;
+            border-radius: 4px;
+            box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.3);
+            transition: right 0.3s var(--easing);
+        }
+
+        .settings-panel.visible {
+            right: 16px;
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .theme-option {
+            width: 100%;
+            height: 32px;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            transition: all 0.12s ease;
+        }
+
+        .font-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .font-option {
+            padding: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.12s ease;
+        }
+
+        .font-option.active {
+            border-color: var(--accent);
+            background: var(--hover);
+        }
+
+        body.theme-dark {
+            --bg: #2D2D2D;
+            --panel: #333333;
+            --border: #454545;
+        }
+
+        body.theme-solarized {
+            --bg: #002B36;
+            --panel: #073642;
+            --border: #586E75;
+            --text: #839496;
+            --accent: #268BD2;
+            --hover: #073642;
+            --active: #005B7F;
+        }
+
+        .keyword { color: var(--keyword); }
+        .string { color: var(--string); }
+        .number { color: var(--number); }
+        .function { color: var(--function); }
+        .comment { color: var(--comment); }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--panel); }
+        ::-webkit-scrollbar-thumb { background: var(--border); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
     </style>
 </head>
 <body>
     <div class="tab-bar" id="tabBar"></div>
     <div class="title-bar">
-        <button class="imgui-button" id="settingsButton">⚙️ Settings</button>
-        <button class="imgui-button" id="newTabButton">➕ New Tab</button>
+        <button class="imgui-button" onclick="toggleSettings()">⚙️ Settings</button>
+        <button class="imgui-button" onclick="newTab()">➕ New Tab</button>
         <select class="imgui-button" id="languageSelect">
             <option value="python">Python</option>
             <option value="lua">Lua</option>
@@ -22,7 +294,7 @@
             <option value="html">HTML</option>
             <option value="css">CSS</option>
         </select>
-        <button class="imgui-button" id="runButton">▶ Run (Ctrl+Enter)</button>
+        <button class="imgui-button" onclick="executeCode()">▶ Run (Ctrl+Enter)</button>
     </div>
 
     <div class="editor-wrapper">
@@ -101,12 +373,7 @@
                 this.initTabEvents();
                 this.initSettings();
                 this.loadPreferences();
-
-                // Bind button events
-                document.getElementById('settingsButton').addEventListener('click', () => this.toggleSettings());
-                document.getElementById('newTabButton').addEventListener('click', () => this.newTab());
-                document.getElementById('runButton').addEventListener('click', () => this.executeCode());
-
+                
                 document.getElementById('languageSelect').addEventListener('change', () => {
                     this.updateHighlight();
                     this.saveTabs();
@@ -123,13 +390,246 @@
                 });
             }
 
-            toggleSettings() {
-                const panel = document.getElementById('settingsPanel');
-                panel.classList.toggle('visible');
+            initEditorEvents() {
+                this.editor.addEventListener('input', () => {
+                    this.lastSelection = this.saveSelection();
+                    this.debouncedHighlight();
+                });
+
+                this.editor.addEventListener('scroll', () => {
+                    this.gutter.scrollTop = this.editor.scrollTop;
+                });
+
+                this.editor.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        const selection = window.getSelection();
+                        const range = selection.getRangeAt(0);
+                        const lineStart = range.startContainer.textContent.lastIndexOf('\n', range.startOffset - 1) + 1;
+                        const lineText = range.startContainer.textContent.slice(lineStart, range.startOffset);
+                        const indent = lineText.match(/^\s*/)[0];
+                        
+                        setTimeout(() => {
+                            document.execCommand('insertText', false, '\n' + indent);
+                            e.preventDefault();
+                        }, 0);
+                    }
+                });
             }
 
-            newTab() {
-                this.createTab({ title: `Untitled ${this.tabCounter}`, content: '' });
+            initTabEvents() {
+                document.getElementById('tabBar').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('tab')) {
+                        this.switchTab(e.target.dataset.tabId);
+                    } else if (e.target.classList.contains('tab-close')) {
+                        this.closeTab(e.target.parentElement.dataset.tabId);
+                    }
+                });
+            }
+
+            initSettings() {
+                document.querySelectorAll('.theme-option').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.body.className = `theme-${btn.dataset.theme}`;
+                        localStorage.setItem('vex-theme', btn.dataset.theme);
+                    });
+                });
+
+                document.querySelectorAll('.font-option').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.documentElement.style.setProperty('--editor-font', btn.dataset.font);
+                        localStorage.setItem('vex-font', btn.dataset.font);
+                        btn.parentElement.querySelector('.active')?.classList.remove('active');
+                        btn.classList.add('active');
+                    });
+                });
+            }
+
+            initTabs() {
+                const savedTabs = JSON.parse(localStorage.getItem('vex-tabs') || '[]');
+                if (savedTabs.length > 0) {
+                    savedTabs.forEach(tab => this.createTab(tab));
+                } else {
+                    this.createTab({ title: 'Untitled', content: '', language: 'python' });
+                }
+            }
+
+            createTab({ title, content, language }) {
+                const tabId = Date.now().toString();
+                const tab = {
+                    id: tabId,
+                    title: title || `Untitled ${this.tabCounter++}`,
+                    content: content || '',
+                    language: language || 'python'
+                };
+
+                const tabElement = document.createElement('div');
+                tabElement.className = 'tab';
+                tabElement.dataset.tabId = tabId;
+                tabElement.innerHTML = `
+                    ${tab.title}
+                    <span class="tab-close">×</span>
+                `;
+
+                document.getElementById('tabBar').appendChild(tabElement);
+                this.tabs.push(tab);
+                this.switchTab(tabId);
+                return tabId;
+            }
+
+            switchTab(tabId) {
+                this.tabs.forEach(t => {
+                    const el = document.querySelector(`[data-tab-id="${t.id}"]`);
+                    el.classList.remove('active');
+                    if (t.id === tabId) {
+                        el.classList.add('active');
+                        this.activeTabId = tabId;
+                        this.editor.textContent = t.content;
+                        document.getElementById('languageSelect').value = t.language;
+                        this.updateHighlight();
+                        this.updateGutter();
+                    }
+                });
+            }
+
+            closeTab(tabId) {
+                const index = this.tabs.findIndex(t => t.id === tabId);
+                if (index === -1) return;
+
+                this.tabs.splice(index, 1);
+                document.querySelector(`[data-tab-id="${tabId}"]`).remove();
+
+                if (this.tabs.length > 0) {
+                    this.switchTab(this.tabs[Math.max(0, index - 1)].id);
+                } else {
+                    this.createTab({ title: 'New Tab', content: '' });
+                }
+                this.saveTabs();
+            }
+
+            saveTabs() {
+                const activeTab = this.tabs.find(t => t.id === this.activeTabId);
+                if (activeTab) {
+                    activeTab.content = this.editor.textContent;
+                    activeTab.language = document.getElementById('languageSelect').value;
+                }
+                localStorage.setItem('vex-tabs', JSON.stringify(this.tabs));
+            }
+
+            debouncedHighlight() {
+                clearTimeout(this.highlightTimeout);
+                this.highlightTimeout = setTimeout(() => {
+                    this.updateHighlight();
+                    this.restoreSelection(this.lastSelection);
+                }, 100);
+            }
+
+            saveSelection() {
+                const sel = window.getSelection();
+                if (sel.rangeCount === 0) return null;
+                
+                const range = sel.getRangeAt(0);
+                const pre = range.cloneRange();
+                pre.selectNodeContents(this.editor);
+                pre.setEnd(range.startContainer, range.startOffset);
+                
+                return {
+                    start: pre.toString().length,
+                    end: pre.toString().length + range.toString().length
+                };
+            }
+
+            restoreSelection(sel) {
+                if (!sel) return;
+                
+                let charIndex = 0;
+                const range = document.createRange();
+                range.setStart(this.editor, 0);
+                range.collapse(true);
+                
+                const nodeStack = [this.editor];
+                let node;
+                let foundStart = false;
+                let foundEnd = false;
+
+                while (!foundEnd && (node = nodeStack.pop())) {
+                    if (node.nodeType === 3) {
+                        const nextIndex = charIndex + node.length;
+                        if (!foundStart && sel.start >= charIndex && sel.start <= nextIndex) {
+                            range.setStart(node, sel.start - charIndex);
+                            foundStart = true;
+                        }
+                        if (foundStart && sel.end >= charIndex && sel.end <= nextIndex) {
+                            range.setEnd(node, sel.end - charIndex);
+                            foundEnd = true;
+                        }
+                        charIndex = nextIndex;
+                    } else {
+                        const children = node.childNodes;
+                        for (let i = children.length - 1; i >= 0; i--) {
+                            nodeStack.push(children[i]);
+                        }
+                    }
+                }
+
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+
+            updateHighlight() {
+                const text = this.editor.textContent;
+                const lang = document.getElementById('languageSelect').value;
+                let html = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                
+                // Process comments first
+                html = html.replace(this.syntaxRules[lang][0].regex, match => 
+                    `<span class="${this.syntaxRules[lang][0].class}">${match}</span>`
+                );
+
+                // Process other syntax elements
+                this.syntaxRules[lang].slice(1).forEach(rule => {
+                    html = html.replace(rule.regex, match => 
+                        `<span class="${rule.class}">${match}</span>`
+                    );
+                });
+
+                // DOM diffing implementation
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const newContent = Array.from(temp.childNodes);
+                
+                const oldNodes = Array.from(this.editor.childNodes);
+                const newNodes = newContent;
+                
+                let oldIndex = 0;
+                let newIndex = 0;
+
+                while (oldIndex < oldNodes.length || newIndex < newNodes.length) {
+                    const oldNode = oldNodes[oldIndex];
+                    const newNode = newNodes[newIndex];
+
+                    if (oldNode && newNode && oldNode.isEqualNode(newNode)) {
+                        oldIndex++;
+                        newIndex++;
+                    } else {
+                        if (oldNode) {
+                            this.editor.removeChild(oldNode);
+                            oldIndex++;
+                        }
+                        if (newNode) {
+                            this.editor.insertBefore(newNode.cloneNode(true), oldNodes[oldIndex]);
+                            newIndex++;
+                        }
+                    }
+                }
+
+                this.updateGutter();
+                this.saveTabs();
+            }
+
+            updateGutter() {
+                const lines = this.editor.textContent.split('\n').length;
+                this.gutter.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
             }
 
             executeCode() {
@@ -177,14 +677,47 @@
                 }
             }
 
-            // Add other methods here...
+            appendConsoleOutput(text) {
+                this.console.innerHTML += text;
+                this.console.scrollTop = this.console.scrollHeight;
+            }
+
+            loadPreferences() {
+                const savedTheme = localStorage.getItem('vex-theme');
+                if (savedTheme) document.body.className = `theme-${savedTheme}`;
+
+                const savedFont = localStorage.getItem('vex-font');
+                if (savedFont) {
+                    document.documentElement.style.setProperty('--editor-font', savedFont);
+                    document.querySelector(`.font-option[data-font="${savedFont}"]`)?.classList.add('active');
+                }
+
+                document.fonts.ready.then(() => {
+                    document.querySelectorAll('.proggy').forEach(el => {
+                        el.style.fontFamily = 'Proggy Clean';
+                    });
+                });
+            }
         }
 
         const ide = new IDEEditor();
 
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('visible');
+        }
+
+        function newTab() {
+            ide.createTab({ title: `Untitled ${ide.tabCounter}`, content: '' });
+        }
+
+        function executeCode() {
+            ide.executeCode();
+        }
+
         document.addEventListener('keydown', e => {
             if (e.ctrlKey && e.key === 'Enter') {
-                ide.executeCode();
+                executeCode();
                 e.preventDefault();
             }
         });
