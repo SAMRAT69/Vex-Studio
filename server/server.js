@@ -1,16 +1,22 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+require('dotenv').config();  // To load environment variables
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "*" })); // Allow all origins. Change to more restrictive in production
+app.use(cors({ origin: "*" })); // In production, restrict this to allowed domains
 
-// Directly expose the API key (not recommended in production)
-const OPENAI_API_KEY = "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"; 
+// Retrieve OpenAI API key from environment variable
+const OPENAI_API_KEY = "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";  // Ensure you have set this in your .env file
 
+// Define the translation endpoint
 app.post("/translate", async (req, res) => {
     const { inputCode, fromLang, toLang } = req.body;
+
+    if (!inputCode || !fromLang || !toLang) {
+        return res.status(400).json({ translatedCode: "Missing input data!" });
+    }
 
     const prompt = `Translate the following ${fromLang} code to ${toLang}:\n\n${inputCode}`;
 
@@ -37,4 +43,5 @@ app.post("/translate", async (req, res) => {
     }
 });
 
+// Start the server
 app.listen(3000, () => console.log("Vex Studio Server running on port 3000"));
