@@ -12,7 +12,7 @@ async function translateCode() {
     outputBox.value = "Translating... ⏳";
 
     try {
-        const response = await fetch("http://localhost:3000/translate", { // Change to your production URL
+        const response = await fetch("http://localhost:3000/translate", {  // Ensure URL is correct
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
