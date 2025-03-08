@@ -6,6 +6,7 @@
     <title>Vex IDE</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.1.0/skulpt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/skulpt/1.1.0/skulpt-stdlib.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
     <style>
         @import url('https://fonts.cdnfonts.com/css/cascadia-code');
         @import url('https://fonts.cdnfonts.com/css/proggy-clean');
@@ -289,6 +290,9 @@
         <select class="imgui-button" id="languageSelect">
             <option value="python">Python</option>
             <option value="lua">Lua</option>
+            <option value="javascript">JavaScript</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
         </select>
         <button class="imgui-button" onclick="executeCode()">▶ Run (Ctrl+Enter)</button>
     </div>
@@ -339,6 +343,24 @@
                         { regex: /(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, class: 'string' },
                         { regex: /\b(function|end|if|then|else|elseif|for|while|repeat|until|return|local)\b/g, class: 'keyword' },
                         { regex: /\b\d+\.?\d*\b/g, class: 'number' }
+                    ],
+                    javascript: [
+                        { regex: /(\/\/.*|\/\*[\s\S]*?\*\/)$/gm, class: 'comment' },
+                        { regex: /(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, class: 'string' },
+                        { regex: /\b(function|class|if|else|for|while|return|import|export|try|catch|finally|throw)\b/g, class: 'keyword' },
+                        { regex: /\b([A-Za-z_][A-Za-z0-9_]*)(?=\()/g, class: 'function' },
+                        { regex: /\b\d+\.?\d*\b/g, class: 'number' }
+                    ],
+                    html: [
+                        { regex: /(<!--[\s\S]*?-->)$/gm, class: 'comment' },
+                        { regex: /(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, class: 'string' },
+                        { regex: /<\/?[A-Za-z0-9-]+(?:\s+[A-Za-z0-9-]+(?:=(?:"[^"]*"|'[^']*'|[^'"\s]+))?\s*\/?>/g, class: 'keyword' }
+                    ],
+                    css: [
+                        { regex: /(\/\*[\s\S]*?\*\/)$/gm, class: 'comment' },
+                        { regex: /(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, class: 'string' },
+                        { regex: /\b([A-Za-z-]+)\s*:/g, class: 'keyword' },
+                        { regex: /#[0-9A-Fa-f]{3,6}\b/g, class: 'number' }
                     ]
                 };
 
@@ -624,11 +646,31 @@
                         ).catch(e => {
                             this.appendConsoleOutput(`<span class="error">${e.toString()}</span>`);
                         });
-                    } else {
+                    } else if (activeTab.language === 'javascript') {
                         const output = [];
                         const print = (...args) => output.push(args.join(' '));
                         new Function('print', activeTab.content)(print);
                         this.appendConsoleOutput(output.join('<br>'));
+                    } else if (activeTab.language === 'lua') {
+                        const output = [];
+                        const print = (...args) => output.push(args.join(' '));
+                        new Function('print', activeTab.content)(print);
+                        this.appendConsoleOutput(output.join('<br>'));
+                    } else if (activeTab.language === 'html') {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                        iframe.contentDocument.open();
+                        iframe.contentDocument.write(activeTab.content);
+                        iframe.contentDocument.close();
+                        this.appendConsoleOutput('HTML rendered successfully.');
+                        document.body.removeChild(iframe);
+                    } else if (activeTab.language === 'css') {
+                        const style = document.createElement('style');
+                        style.textContent = activeTab.content;
+                        document.head.appendChild(style);
+                        this.appendConsoleOutput('CSS applied successfully.');
+                        document.head.removeChild(style);
                     }
                 } catch(e) {
                     this.appendConsoleOutput(`<span class="error">${e.message}</span>`);
